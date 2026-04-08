@@ -9,7 +9,7 @@ import Foundation
 
 public enum Lifetime {
 	case transient
-	case singleton
+	case container
 }
 
 private struct ServiceKey: Hashable {
@@ -78,7 +78,7 @@ extension Container: ResolverProtocol {
 						fatalError("Factory for \(type) returned wrong type")
 					}
 					return instance
-				case .singleton:
+				case .container:
 					if let existing = queue.sync(execute: { singletons[key] }) as? T {
 						return existing
 					}
