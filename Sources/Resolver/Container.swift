@@ -48,14 +48,16 @@ public class Container {
 extension Container: ContainerProtocol {
 	public func register<Service>(_ type: Service.Type, name: String? = nil, lifetime: Lifetime = .transient, factory: @escaping (ResolverProtocol) -> Service) {
 		let key = ServiceKey(type, name: name)
-		queue.async(flags: .barrier) {
+		queue.sync(flags: .barrier) {
 			self.factories[key] = (factory: { r in factory(r) }, lifetime: lifetime)
 		}
 	}
 	
 	public func contains<T>(_ type: T.Type, name: String? = nil) -> Bool {
 		let key = ServiceKey(type, name: name)
-		return factories.keys.contains(key)
+		return queue.sync(flags: .barrier) {
+			return factories.keys.contains(key)
+		}
 	}
 }
 
@@ -83,19 +85,18 @@ extension Container: ResolverProtocol {
 						return existing
 					}
 					
+					guard let created = factory(self) as? T else {
+						fatalError("Factory for \(type) returned wrong type")
+					}
+					
 					var instance: T!
 					queue.sync(flags: .barrier) {
 						if let existing = self.singletons[key] as? T {
 							instance = existing
-							return
+						} else {
+							self.singletons[key] = created
+							instance = created
 						}
-						
-						guard let created = factory(self) as? T else {
-							fatalError("Factory for \(type) returned wrong type")
-						}
-						
-						self.singletons[key] = created
-						instance = created
 					}
 					return instance
 			}
