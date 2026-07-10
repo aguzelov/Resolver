@@ -5,11 +5,12 @@ import PackageDescription
 
 let package = Package(
     name: "Resolver",
-    platforms: [.iOS(.v16)],
+    platforms: [.iOS(.v16), .macOS(.v13)],
     products: [
         .library(name: "Resolver", targets: ["Resolver"])
     ],
     targets: [
-        .target(name: "Resolver")
+        .target(name: "Resolver"),
+        .testTarget(name: "ResolverTests", dependencies: ["Resolver"])
     ]
 )
